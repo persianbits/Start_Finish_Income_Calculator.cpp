@@ -1,0 +1,374 @@
+
+/*
+
+This code performs a series of calculations and inputs/outputs related to income, taxes, and date calculations. It begins by prompting the user to enter their hourly rate and the number of hours worked each day of the week. It calculates the total hours worked and displays the result. Then, it calculates overtime hours and determines the regular and overtime gross incomes based on the user's choice of overtime rate. The code proceeds to calculate various taxes such as federal, state, NYC, Social Security, Medicare, and NYSDI taxes. It calculates the total taxes and the net income. An income summary is displayed with the total gross income, total taxes, and net income.
+
+The code then asks the user to input start and finish dates. It validates the input to ensure the dates are valid. The number of days worked within the given date range is calculated. The code also calculates the average income per day and per week. It displays the work duration and averages.
+
+Next, the code determines and displays the start and finish dates of the next week based on the current date. It also calculates and displays the day of the week for the start and finish dates.
+
+*/
+
+#include <iostream>
+#include <iomanip>
+#include <chrono>
+#include <ctime>
+#include <string>
+#include <cctype>
+#include <cmath>
+
+// Function to check if a string is numeric
+bool isNumeric(const std::string& str) {
+    for (char c : str) {
+        if (!std::isdigit(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Function to get the number of days in a month
+int getDaysInMonth(int month, int year) {
+    switch (month) {
+        case 2:
+            if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+                return 29;
+            } else {
+                return 28;
+            }
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+            return 30;
+        default:
+            return 31;
+    }
+}
+
+// Function to get the month number from its name
+int getMonthNumber(const std::string& monthName) {
+    std::string lowercaseMonthName;
+    for (char c : monthName) {
+        lowercaseMonthName += std::tolower(c);
+    }
+    if (lowercaseMonthName == "january" || lowercaseMonthName == "jan" || lowercaseMonthName == "1") {
+        return 1;
+    } else if (lowercaseMonthName == "february" || lowercaseMonthName == "feb" || lowercaseMonthName == "2") {
+        return 2;
+    } else if (lowercaseMonthName == "march" || lowercaseMonthName == "mar" || lowercaseMonthName == "3") {
+        return 3;
+    } else if (lowercaseMonthName == "april" || lowercaseMonthName == "apr" || lowercaseMonthName == "4") {
+        return 4;
+    } else if (lowercaseMonthName == "may" || lowercaseMonthName == "5") {
+        return 5;
+    } else if (lowercaseMonthName == "june" || lowercaseMonthName == "jun" || lowercaseMonthName == "6") {
+        return 6;
+    } else if (lowercaseMonthName == "july" || lowercaseMonthName == "jul" || lowercaseMonthName == "7") {
+        return 7;
+    } else if (lowercaseMonthName == "august" || lowercaseMonthName == "aug" || lowercaseMonthName == "8") {
+        return 8;
+    } else if (lowercaseMonthName == "september" || lowercaseMonthName == "sep" || lowercaseMonthName == "9") {
+        return 9;
+    } else if (lowercaseMonthName == "october" || lowercaseMonthName == "oct" || lowercaseMonthName == "10") {
+        return 10;
+    } else if (lowercaseMonthName == "november" || lowercaseMonthName == "nov" || lowercaseMonthName == "11") {
+        return 11;
+    } else if (lowercaseMonthName == "december" || lowercaseMonthName == "dec" || lowercaseMonthName == "12") {
+        return 12;
+    } else {
+        return -1; // Invalid month name
+    }
+}
+
+// Function to get the day of the week
+std::string getDayOfWeek(int month, int day, int year) {
+    // Convert month and year to valid input for tm structure
+    int tmMonth = month - 1; // tm structure months range from 0 to 11
+    int tmYear = year - 1900; // tm structure years start from 1900
+
+    // Create a tm structure with the given date
+    std::tm time = {0};
+    time.tm_mon = tmMonth;
+    time.tm_mday = day;
+    time.tm_year = tmYear;
+
+    // Convert tm structure to time_t value
+    std::time_t timeValue = std::mktime(&time);
+
+    // Get the weekday (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    int weekday = std::localtime(&timeValue)->tm_wday;
+
+    // Array of weekday names
+    std::string weekdays[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+    // Return the corresponding weekday name
+    return weekdays[weekday];
+}
+
+int main() {
+    // Constants
+    const double socialSecurityTaxRate = 0.062;
+    const double medicareTaxRate = 0.0145;
+    const double nySDITaxRate = 0.005;
+    const double hoursPerWeek = 40.0;
+
+    // Inputs
+    double hourlyRate = 0.0;
+    double totalHoursWorked = 0.0;
+    int overtimeChoice;
+    double customOvertimeRate = 0.0;
+
+    // Ask for user input
+    std::cout << "Enter your hourly rate: $";
+    std::cin >> hourlyRate;
+
+  double hoursWorkedPerDay[7] = {0.0}; // Array to store hours worked for each day of the week
+
+for (int i = 0; i < 7; i++) {
+    std::string dayOfWeek;
+    switch (i) {
+        case 0:
+            dayOfWeek = "Monday";
+            break;
+        case 1:
+            dayOfWeek = "Tuesday";
+            break;
+        case 2:
+            dayOfWeek = "Wednesday";
+            break;
+        case 3:
+            dayOfWeek = "Thursday";
+            break;
+        case 4:
+            dayOfWeek = "Friday";
+            break;
+        case 5:
+            dayOfWeek = "Saturday";
+            break;
+        case 6:
+            dayOfWeek = "Sunday";
+            break;
+        default:
+            break;
+    }
+
+    do {
+        std::cout << "\n Enter the number of hours on " << dayOfWeek << " :";
+        std::cin >> hoursWorkedPerDay[i];
+
+        if (hoursWorkedPerDay[i] < 0 || hoursWorkedPerDay[i] > 24) {
+            std::cout << "Error: The number of hours should be between 0 and 24. Please try again." << std::endl;
+        }
+    } while (hoursWorkedPerDay[i] < 0 || hoursWorkedPerDay[i] > 24);
+
+    totalHoursWorked += hoursWorkedPerDay[i];
+}
+
+
+
+
+    // Display total hours worked
+    std::cout << "\nTotal hours worked per week: " << totalHoursWorked << std::endl;
+
+    // Calculate overtime hours
+    double overtimeHours = totalHoursWorked - hoursPerWeek;
+    overtimeHours = (overtimeHours > 0) ? overtimeHours : 0.0;
+
+    // Calculate regular gross income
+    double regularGrossIncome = hoursPerWeek * hourlyRate;
+
+    // Calculate overtime gross income
+    double overtimeRate;
+    double overtimeGrossIncome = 0.0;
+
+    // Overtime rate selection
+    std::cout << "\nChoose an overtime rate option:\n";
+    std::cout << "1. Standard overtime rate (1.5)\n";
+    std::cout << "2. Custom overtime rate\n";
+    std::cout << "Enter your choice: ";
+    std::cin >> overtimeChoice;
+
+    if (overtimeChoice == 1) {
+        // Standard overtime rate (1.5)
+        overtimeRate = 1.5;
+        overtimeGrossIncome = overtimeHours * hourlyRate * overtimeRate;
+    } else if (overtimeChoice == 2) {
+        // Custom overtime rate
+        std::cout << "Enter the custom overtime rate (greater than 1.5): ";
+        std::cin >> customOvertimeRate;
+        if (customOvertimeRate > 1.5) {
+            overtimeRate = customOvertimeRate;
+            overtimeGrossIncome = overtimeHours * hourlyRate * overtimeRate;
+        } else {
+            std::cout << "Invalid custom overtime rate. Please try again." << std::endl;
+            return 1; // Exit the program with an error code
+        }
+    } else {
+        std::cout << "Invalid choice. Please try again." << std::endl;
+        return 1; // Exit the program with an error code
+    }
+
+    // Calculate total gross income
+    double totalGrossIncome = regularGrossIncome + overtimeGrossIncome;
+
+// Declare variables for tax calculations
+double federalTax;
+double stateTax;
+double nycTax;
+double socialSecurityTax;
+double medicareTax;
+double nySDITax;
+double totalTaxes;
+double netIncome;
+
+
+
+
+// Calculate federal tax
+if (totalGrossIncome <= 8500.0) {
+    federalTax = totalGrossIncome * 0.04;
+} else if (totalGrossIncome <= 11700.0) {
+    federalTax = totalGrossIncome * 0.045;
+} else if (totalGrossIncome <= 13900.0) {
+    federalTax = totalGrossIncome * 0.0525;
+} else if (totalGrossIncome <= 21400.0) {
+    federalTax = totalGrossIncome * 0.059;
+} else if (totalGrossIncome <= 80650.0) {
+    federalTax = totalGrossIncome * 0.0633;
+} else if (totalGrossIncome <= 215400.0) {
+    federalTax = totalGrossIncome * 0.0657;
+} else if (totalGrossIncome <= 1077550.0) {
+    federalTax = totalGrossIncome * 0.0685;
+} else {
+    federalTax = totalGrossIncome * 0.0882;
+}
+
+// Calculate state tax
+stateTax = totalGrossIncome * 0.04; // Assuming a constant state tax rate of 4%
+
+// Calculate NYC tax
+nycTax = totalGrossIncome * 0.03078; // Assuming a constant NYC tax rate of 3.078%
+
+// Calculate Social Security tax
+ socialSecurityTax = socialSecurityTaxRate * totalGrossIncome;
+
+// Calculate Medicare tax
+ medicareTax = medicareTaxRate * totalGrossIncome;
+
+// Calculate NYSDI tax
+ nySDITax = nySDITaxRate * totalGrossIncome;
+
+// Calculate total taxes
+ totalTaxes = federalTax + stateTax + nycTax + socialSecurityTax + medicareTax + nySDITax;
+
+// Calculate net income
+ netIncome = totalGrossIncome - totalTaxes;
+
+    // Display income summary
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "\nIncome Summary:\n";
+    std::cout << "----------------\n";
+    std::cout << "Total Gross Income: $" << totalGrossIncome << std::endl;
+    std::cout << "Total Taxes: $" << totalTaxes << std::endl;
+    std::cout << "Net Income: $" << netIncome << std::endl;
+
+    // Inputs for start and finish dates
+    int startDay, startYear;
+    std::string startMonthStr;
+    int finishDay, finishYear;
+    std::string finishMonthStr;
+
+    // Ask for start date
+    std::cout << "\nEnter the start date" << std::endl;
+    std::cout << "Month: ";
+    std::cin >> startMonthStr;
+    std::cout << "Day: ";
+    std::cin >> startDay;
+    std::cout << "Year: ";
+    std::cin >> startYear;
+
+    // Validate start date inputs
+    if ((!isNumeric(startMonthStr) && getMonthNumber(startMonthStr) == -1) || startDay <= 0 || startYear <= 0 ||
+        (isNumeric(startMonthStr) && (std::stoi(startMonthStr) < 1 || std::stoi(startMonthStr) > 12)) ||
+        (!isNumeric(startMonthStr) && getMonthNumber(startMonthStr) == -1)) {
+        std::cout << "Invalid start date. Please enter a valid date." << std::endl;
+        return 1; // Exit the program with an error code
+    }
+
+    int startMonth;
+    if (isNumeric(startMonthStr)) {
+        startMonth = std::stoi(startMonthStr);
+    } else {
+        startMonth = getMonthNumber(startMonthStr);
+    }
+
+    // Ask for finish date
+    std::cout << "\nEnter the finish date" << std::endl;
+    std::cout << "Month: ";
+    std::cin >> finishMonthStr;
+    std::cout << "Day: ";
+    std::cin >> finishDay;
+    std::cout << "Year: ";
+    std::cin >> finishYear;
+
+    // Validate finish date inputs
+    if ((!isNumeric(finishMonthStr) && getMonthNumber(finishMonthStr) == -1) || finishDay <= 0 || finishYear <= 0 ||
+        (isNumeric(finishMonthStr) && (std::stoi(finishMonthStr) < 1 || std::stoi(finishMonthStr) > 12)) ||
+        (!isNumeric(finishMonthStr) && getMonthNumber(finishMonthStr) == -1)) {
+        std::cout << "Invalid finish date. Please enter a valid date." << std::endl;
+        return 1; // Exit the program with an error code
+    }
+
+    int finishMonth;
+    if (isNumeric(finishMonthStr)) {
+        finishMonth = std::stoi(finishMonthStr);
+    } else {
+        finishMonth = getMonthNumber(finishMonthStr);
+    }
+
+    // Calculate number of days worked
+    int numDaysWorked = 0;
+
+    // Check if start date is before finish date
+    if (startYear > finishYear || (startYear == finishYear && startMonth > finishMonth) ||
+        (startYear == finishYear && startMonth == finishMonth && startDay > finishDay)) {
+        std::cout << "Invalid date range. Start date cannot be after finish date." << std::endl;
+        return 1; // Exit the program with an error code
+    }
+
+    // Calculate number of days worked within the given date range
+    std::tm startDate = {0};
+    startDate.tm_year = startYear - 1900;
+    startDate.tm_mon = startMonth - 1;
+    startDate.tm_mday = startDay;
+
+    std::tm endDate = {0};
+    endDate.tm_year = finishYear - 1900;
+    endDate.tm_mon = finishMonth - 1;
+    endDate.tm_mday = finishDay;
+
+    std::time_t startTime = std::mktime(&startDate);
+    std::time_t endTime = std::mktime(&endDate);
+
+    const int secondsPerDay = 24 * 60 * 60;
+    numDaysWorked = std::difftime(endTime, startTime) / secondsPerDay + 1;
+
+    // Calculate accumulated earnings from start to finish day
+    double accumulatedEarnings = totalGrossIncome * (numDaysWorked / 7.0);
+
+    // Display work duration and accumulated earnings
+    std::cout << "\nWork Duration and Accumulated Earnings:\n";
+    std::cout << "---------------------------------------\n";
+    std::cout << "Number of Days Worked: " << numDaysWorked << std::endl;
+    std::cout << "Accumulated Earnings from Start to Finish: $" << accumulatedEarnings << std::endl;
+
+    // Display start and finish dates
+    std::cout << "\nStart Date: " << startMonth << "/" << startDay << "/" << startYear;
+    std::cout << " (" << getDayOfWeek(startMonth, startDay, startYear) << ")" << std::endl;
+    std::cout << "Finish Date: " << finishMonth << "/" << finishDay << "/" << finishYear;
+    std::cout << " (" << getDayOfWeek(finishMonth, finishDay, finishYear) << ")" << std::endl;
+
+    return 0;
+}
+
